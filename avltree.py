@@ -186,6 +186,45 @@ class node:
 
 
 
+    def InOrderRecursion(self):
+        # Does in order recursion in the subtree rooted at this node
+        if(self.left):
+            self.left.InOrderRecursion()
+
+        print(self.key,end=' ')
+
+        if(self.right):
+            self.right.InOrderRecursion()
+
+
+    def FindKey(self,key):
+        # Find the key in the subtree rooted at this node
+        if(self == None):
+            return None
+        
+        if(self.key == key):
+            return self
+        else:
+            if(key > self.key):
+                if(self.right):
+                    return self.right.FindKey(key)
+                else:
+                    return None
+            else:
+                if(self.left):
+                    return self.left.FindKey(key)
+                else:
+                    return None
+                    
+    def NukeLeaf(self):
+        if self.parent.left is self :
+            self.parent.left = None
+        else:
+            self.parent.right = None
+            
+
+
+            
 class avltree:
     def __init__(self, root=None):
         self.root = None
@@ -222,7 +261,7 @@ class avltree:
         else:
             return self.root.GetMax()
 
-        
+      
         
 # Update heights as you go from the leaf up
 # Assumes it is called with currentNode = one of the leaf nodes
@@ -251,19 +290,57 @@ class avltree:
             return
 
 
+    def FindKey(self,key):
+        # Finds the key if it exists in the tree.
+        # Returns the node if it exists, otherwise None.
+        node = self.root.FindKey(key)
+        return node
+            
+        
+    def DeleteKey(self,key):
+        # Finds the key if it exists in the tree. Then deletes it.
+        node = self.root.FindKey(key)
+        if node is not None:
+            if node.right is not None:
+                maxNode = node.right.GetMin()
+                node.key = maxNode.key
+                maxNode.NukeLeaf()
+                
+            elif node.left is not None:
+                minNode = node.left.GetMax()
+                node.key = minNode.key
+                minNode.NukeLeaf()
+                
+            else:
+                # This node has no subtree, so just nuke it
+                node.NukeLeaf()
+        else:
+            return None
+
+        
+
     # A poorly implemented recursion that I find useful for debug purposes
-    def ReturnTreeAsList(self, locations, xAxis, yAxis, currentNode = None):
+    def ReturnTreeAsList(self, locations, currentNode = None):
         if currentNode is None:
             currentNode = self.root
-        locations.append([currentNode.key, xAxis, yAxis])
+        locations.append([currentNode.key, currentNode, currentNode.left.key if currentNode.left is not None else None,
+                                                        currentNode.right.key if currentNode.right is not None else None])
 
         if currentNode.left:
-            self.ReturnTreeAsList(locations, xAxis-1, yAxis-1, currentNode.left)
+            self.ReturnTreeAsList(locations, currentNode.left)
         if currentNode.right:
-            self.ReturnTreeAsList(locations, xAxis+1, yAxis-1, currentNode.right)
+            self.ReturnTreeAsList(locations, currentNode.right)
             
         return locations
 
+    def InOrderRecursion(self):
+        currentNode = self.root
+        print('\n')
+        currentNode.InOrderRecursion()
+        print('\n')
+
+    
+    
     # def BalanceTree(self):
 
     #     leftHeight, rightHeight = self.GetLeftRightHeight()
