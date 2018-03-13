@@ -23,7 +23,7 @@ class node:
             if( self.right == None ):
                 # We are at a leaf
                 # Insert the key here
-                self.right = node(key, 0, 0, self)
+                self.right = node(key, 1, 0, self)
                 return self.right
             else:
                 # We are not at a leaf. Keep going down the tree.
@@ -36,7 +36,7 @@ class node:
             # Are we at a leaf?
             if( self.left == None ):
                 # We are at a leaf
-                self.left = node(key, 0, 0, self)
+                self.left = node(key, 1, 0, self)
                 return self.left
             else:
                 # We are not at a leaf. Keep going down the tree.
@@ -56,6 +56,21 @@ class node:
 
         return leftHeight, rightHeight
 
+    def GetLeftRightSubtreeSize(self):
+
+        if( self.left == None ):
+            leftSize = 0
+        else:
+            leftSize = self.left.subtreeSize
+
+        if( self.right == None ):
+            rightSize = 0
+        else:
+            rightSize = self.right.subtreeSize
+
+        return leftSize, rightSize
+
+    
     def GetMin(self):
         # Gets the smallest element in the subtree rooted at this node
         if self.left is not None:
@@ -186,15 +201,21 @@ class node:
 
 
 
-    def InOrderRecursion(self):
+    def InOrderRecursion(self, nodeList, startKey, endKey, debug):
         # Does in order recursion in the subtree rooted at this node
-        if(self.left):
-            self.left.InOrderRecursion()
 
-        print(self.key,end=' ')
+        if(self.left):
+            self.left.InOrderRecursion(nodeList, startKey, endKey, debug)
+
+        if(startKey is None or self.key >=startKey):
+            if(endKey is None or self.key <= endKey):
+                nodeList.append(self.key)    
+                if(debug):    
+                    print(self.key,end=', ')
+                    print('stsize '+str(self.subtreeSize),end='   ')
 
         if(self.right):
-            self.right.InOrderRecursion()
+            self.right.InOrderRecursion(nodeList, startKey, endKey, debug)
 
 
     def FindKey(self,key):
@@ -234,6 +255,41 @@ class node:
             self.parent.right = tempChild
 
         self.parent.height = 0
+
+    def GetNumElementsLessThanKey(self, key):
+        numElements = 0
+        
+        if(self is None):
+            return numElements
+        
+        if(self.key < key):
+            numElements += 1 + [self.left.subtreeSize if self.left is not None else 0][0]
+            if(self.right):
+                numElements += self.right.GetNumElementsLessThanKey(key)
+        else:
+            if(self.left):
+                numElements += self.left.GetNumElementsLessThanKey(key)
+
+        return numElements
+
+    def GetNumElementsGreaterThanKey(self, key):
+        numElements = 0
+        
+        if(self is None):
+            return numElements
+        
+        if(self.key > key):
+            numElements += 1 + [self.right.subtreeSize if self.right is not None else 0][0]
+            if(self.left):
+                numElements += self.left.GetNumElementsGreaterThanKey(key)
+
+        else:
+            if(self.right):
+                numElements += self.right.GetNumElementsGreaterThanKey(key)
+
+        return numElements
+
+
             
 
 
@@ -249,12 +305,15 @@ class avltree:
             self.root = node(key, 1, 0) 
             return self.root
         else:
-            insertedNode = self.root.Insert(key)
+            if(self.FindKey(key) is None):
+                insertedNode = self.root.Insert(key)
             
-        # Update tree heights
-        if insertedNode is not None:
-            self.UpdateHeights(insertedNode)
-            self.BalanceTree(insertedNode)
+                # Update tree heights
+                if insertedNode is not None:
+                    self.UpdateHeights(insertedNode)
+                    self.BalanceTree(insertedNode)
+            else:
+                insertedNode = None
 
         return insertedNode
 
@@ -302,6 +361,22 @@ class avltree:
             # The heights are already fixed. We are done
             return
 
+    def UpdateSubtreeSize(self, currentNode):
+
+        if currentNode.left is None and currentNode.right is None:
+            currentNode = currentNode.parent
+
+        leftSize, rightSize = currentNode.GetLeftRightSubtreeSize()
+
+        currentNode.subtreeSize = 1+leftSize+rightSize
+        
+        if currentNode == self.root:
+            # We just updated the root node. We are done.
+            return
+        else:
+            self.UpdateSubtreeSize(currentNode.parent)
+
+
 
     def FindKey(self,key):
         # Finds the key if it exists in the tree.
@@ -314,9 +389,6 @@ class avltree:
         # Finds the key if it exists in the tree. Then deletes it.
         node = self.root.FindKey(key)
 
-        if key is 239.34:
-            import pudb;pu.db
-            
         if node is not None:
             if node.right is not None:
                 maxNode = node.right.GetMin()
@@ -334,7 +406,9 @@ class avltree:
                 # This node has no subtree, so just nuke it
                 tempNode = node.parent
                 node.NukeNode()
-                
+
+            tempNode.subtreeSize -=1
+            self.UpdateSubtreeSize(tempNode)
             self.UpdateHeights(tempNode)            
             self.BalanceTree(tempNode)                
 
@@ -358,13 +432,20 @@ class avltree:
             
         return locations
 
-    def InOrderRecursion(self):
+    def InOrderRecursion(self, startKey=None, endKey=None, debug=True):
+        keyList = []
         currentNode = self.root
-        print('\n')
-        currentNode.InOrderRecursion()
-        print('\n')
-
+        currentNode.InOrderRecursion(keyList, startKey, endKey, debug)
+        return keyList
     
+    def GetNumElementsBetweenRange(self, minKey, maxKey):
+        totalElements = self.root.subtreeSize
+
+        elementsLessThanMinKey = self.root.GetNumElementsLessThanKey(minKey)
+        
+        elementsGreaterThanMinKey =  self.root.GetNumElementsGreaterThanKey(maxKey)
+
+        return totalElements-elementsGreaterThanMinKey-elementsLessThanMinKey
     
     def BalanceTree(self, currentNode):
 
@@ -440,6 +521,8 @@ class avltree:
         x        = currentNode
         y        = currentNode.left
         subtreeC = currentNode.right
+        subtreeBSize = 0
+        subtreeCSize = 0
 
         if y is not None:
             subtreeA = y.left
@@ -455,7 +538,9 @@ class avltree:
         y.parent = x.parent
         y.right = x
         y.left = subtreeA
-        
+        y.subtreeSize = x.subtreeSize
+
+       
         x.parent = y
         x.left = subtreeB
         x.right = subtreeC
@@ -465,9 +550,13 @@ class avltree:
             subtreeA.parent = y
         if(subtreeB is not None):
             subtreeB.parent = x
+            subtreeBSize = subtreeB.subtreeSize
         if(subtreeC is not None):
             subtreeC.parent = x
+            subtreeCSize = subtreeC.subtreeSize
 
+        x.subtreeSize = 1 + subtreeCSize + subtreeBSize
+            
         if(x==self.root):
             self.root = y
             
@@ -498,7 +587,10 @@ class avltree:
         x        = currentNode
         y        = currentNode.right
         subtreeA = currentNode.left
+        subtreeASize = 0
+        subtreeBSize = 0
 
+        
         if(y is not None):
             subtreeB = y.left
             subtreeC = y.right
@@ -513,7 +605,8 @@ class avltree:
         y.parent = x.parent
         y.left = x
         y.right = subtreeC
-
+        y.subtreeSize = x.subtreeSize
+        
         x.parent = y
         x.left = subtreeA
         x.right = subtreeB
@@ -521,11 +614,15 @@ class avltree:
         
         if(subtreeA is not None):
             subtreeA.parent = x
+            subtreeASize = subtreeA.subtreeSize
         if(subtreeB is not None):
             subtreeB.parent = x
+            subtreeBSize = subtreeB.subtreeSize
         if(subtreeC is not None):
             subtreeC.parent = y
 
+        x.subtreeSize = 1 + subtreeASize + subtreeBSize
+            
         if(x==self.root):
             self.root = y
             
