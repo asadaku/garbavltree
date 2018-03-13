@@ -216,11 +216,24 @@ class node:
                 else:
                     return None
                     
-    def NukeLeaf(self):
+    def NukeNode(self):
+        # Assume this node has at most one child
+        tempChild = None
+
+        if self.left is not None:
+            tempChild = self.left
+        elif self.right is not None:
+            tempChild = self.right
+            
+        if(tempChild is not None):
+            tempChild.parent = self.parent
+
         if self.parent.left is self :
-            self.parent.left = None
+            self.parent.left = tempChild
         else:
-            self.parent.right = None
+            self.parent.right = tempChild
+
+        self.parent.height = 0
             
 
 
@@ -237,11 +250,11 @@ class avltree:
             return self.root
         else:
             insertedNode = self.root.Insert(key)
-
             
         # Update tree heights
         if insertedNode is not None:
             self.UpdateHeights(insertedNode)
+            self.BalanceTree(insertedNode)
 
         return insertedNode
 
@@ -300,20 +313,32 @@ class avltree:
     def DeleteKey(self,key):
         # Finds the key if it exists in the tree. Then deletes it.
         node = self.root.FindKey(key)
+
+        if key is 239.34:
+            import pudb;pu.db
+            
         if node is not None:
             if node.right is not None:
                 maxNode = node.right.GetMin()
                 node.key = maxNode.key
-                maxNode.NukeLeaf()
-                
+                tempNode = maxNode.parent
+                maxNode.NukeNode()
+
             elif node.left is not None:
                 minNode = node.left.GetMax()
                 node.key = minNode.key
-                minNode.NukeLeaf()
-                
+                tempNode = minNode.parent
+                minNode.NukeNode()
+
             else:
                 # This node has no subtree, so just nuke it
-                node.NukeLeaf()
+                tempNode = node.parent
+                node.NukeNode()
+                
+            self.UpdateHeights(tempNode)            
+            self.BalanceTree(tempNode)                
+
+            
         else:
             return None
 
@@ -341,169 +366,170 @@ class avltree:
 
     
     
-    # def BalanceTree(self):
+    def BalanceTree(self, currentNode):
 
-    #     leftHeight, rightHeight = self.GetLeftRightHeight()
 
-    #     if(abs(rightHeight - leftHeight)<=1):
-    #         # This node is balanced
-    #         if(self.predecessor == None):
-    #             # We have reached the root node
-    #             return self
-    #         else:
-    #             self.predecessor.BalanceTree()
-    #     else:
-    #         # This node is not balanced!!
-    #         locations = []
-    #         print(self.DisplayTree(locations,0,0))
-    #         updatedPointer = self.CorrectUnbalancedNode()
-    #         print('After rotation')
-    #         print(self.DisplayTree(locations,0,0))
-    #         print('lulz?')
-            
-    #         updatedPointer.BalanceTree()
-            
+        while currentNode is not None:
+
+            leftHeight, rightHeight = currentNode.GetLeftRightHeight()
+
+            if(abs(rightHeight - leftHeight)>1):
+                # This node is not balanced!!
+                currentNode = self.CorrectUnbalancedNode(currentNode)
+
+            currentNode = currentNode.parent
 
             
-    # def CorrectUnbalancedNode(self):
-    #     # The following general rule applies
-    #     leftHeight, rightHeight = self.GetLeftRightHeight()
+    def CorrectUnbalancedNode(self, currentNode):
 
-    #     if(rightHeight > leftHeight):
-    #         # if right child is heavy
-    #         lchildHeight, rchildHeight = self.right.GetLeftRightHeight()
-    #         if(rchildHeight > lchildHeight):
-    #             # If the right child is right heavy or balanced
-    #             # Do a left rotate of the root of the tree provided
-    #             self.LeftRotate()
-    #         else:
-    #             # Do a right rotation of the right child
-    #             self.right.RightRotate()
-    #             # Followed by a left rotate of the root
-    #             self.LeftRotate()
+        leftHeight, rightHeight = currentNode.GetLeftRightHeight()
+
+        # The following rule applies
+        if(rightHeight > leftHeight):
+            # if right child is heavy
+            lchildHeight, rchildHeight = currentNode.right.GetLeftRightHeight()
+            if(rchildHeight > lchildHeight):
+                # If the right child is right heavy or balanced
+                # Do a left rotate of the root of the tree provided
+                self.LeftRotate(currentNode)
+            else:
+                # Do a right rotation of the right child
+                self.RightRotate(currentNode.right)
+                # Followed by a left rotate of the root
+                currentNode = self.LeftRotate(currentNode)
                 
-    #     else:
-    #         # if left child is heavy
-    #         lchildHeight, rchildHeight = self.left.GetLeftRightHeight()
-    #         if(lchildHeight > rchildHeight):
-    #             # If the left child is left heavy or balanced
-    #             # Do a right rotate of the root of the tree provided
-    #             self.RightRotate()
-    #         else:
-    #             # Do a right rotation of the left child
-    #             self.right.LeftRotate()
-    #             # Followed by a right rotate of the root
-    #             self.RightRotate()
+        else:
+            # if left child is heavy
+            lchildHeight, rchildHeight = currentNode.left.GetLeftRightHeight()
+            if(lchildHeight > rchildHeight):
+                # If the left child is left heavy or balanced
+                # Do a right rotate of the root of the tree provided
+                currentNode = self.RightRotate(currentNode)
+            else:
+                # Do a left rotation of the left child
+                self.LeftRotate(currentNode.left)
+                # Followed by a right rotate of the root
+                currentNode = self.RightRotate(currentNode)
                 
-    #     return self.predecessor
+        return currentNode
             
                 
-    # def RightRotate(self):
-    #     """ Performs a right rotation
+    def RightRotate(self, currentNode):
+        """ Performs a right rotation
 
-    #         input is x
-    #         st = subtree
+            input is x
+            st = subtree
         
-    #              p---              
-    #              |                      p---                 
-    #              x                      |                    
-    #           /     \                   y                    
-    #          /       \               /     \                 
-    #         y        st             /       \                
-    #       /   \      C    ===>     st        x       
-    #      /     \                   A       /   \             
-    #     st     st                         /     \            
-    #     A       B                        st     st           
-    #                                      B      C    
-
-        
-    #     The annoying part is handling the Nones
-
-    #     """
-        
-    #     x        = self
-    #     y        = self.right
-    #     subtreeA = self.left
-
-    #     if(y is not None):
-    #         subtreeB = y.left
-    #         subtreeC = y.right
-
-    #     # Start swapping
-    #     if(self.predecessor is not None):
-    #         if(self.predecessor.left == self):
-    #             self.predecessor.left = y 
-    #         else:
-    #             self.predecessor.right = y
-
-    #     y.predecessor = x.predecessor
-    #     y.right = x
-    #     y.left = subtreeA
-        
-    #     x.predecessor = y
-    #     x.left = subtreeB
-    #     x.right = subtreeC
-    #     x.height -= 2
-        
-    #     if(subtreeA is not None):
-    #         subtreeA.predecessor = y
-    #     if(subtreeB is not None):
-    #         subtreeB.predecessor = x
-    #     if(subtreeC is not None):
-    #         subtreeC.predecessor = x
-
-    # def LeftRotate(self):
-    #     """ Performs a left rotation
-    #         input is x
-
-    #         st = subtree
-    #          p---                            p---
-    #          |                               |
-    #          x                               y
-    #       /     \                         /     \ 
-    #      /       \                       /       \
-    #     st        y       ====>         x        st
-    #     A       /   \                 /   \      C
-    #            /     \               /     \
-    #           st     st             st     st
-    #           B       C             A       B
+                 p---              
+                 |                      p---                 
+                 x                      |                    
+              /     \                   y                    
+             /       \               /     \                 
+            y        st             /       \                
+          /   \      C    ===>     st        x       
+         /     \                   A       /   \             
+        st     st                         /     \            
+        A       B                        st     st           
+                                         B      C    
 
         
-    #     The annoying part is handling the Nones
+        The annoying part is handling the Nones
 
-    #     """
+        """
+
+        x        = currentNode
+        y        = currentNode.left
+        subtreeC = currentNode.right
+
+        if y is not None:
+            subtreeA = y.left
+            subtreeB = y.right
+
+        # Start swapping
+        if(currentNode.parent is not None):
+            if(currentNode.parent.left == currentNode):
+                currentNode.parent.left = y 
+            else:
+                currentNode.parent.right = y
+
+        y.parent = x.parent
+        y.right = x
+        y.left = subtreeA
         
-    #     x        = self
-    #     y        = self.right
-    #     subtreeA = self.left
-
-    #     if(y is not None):
-    #         subtreeB = y.left
-    #         subtreeC = y.right
-
-    #     # Start swapping
-    #     if(self.predecessor is not None):
-    #         if(self.predecessor.left == self):
-    #             self.predecessor.left = y 
-    #         else:
-    #             self.predecessor.right = y
-
-    #     import pudb;pu.db
-    #     y.predecessor = x.predecessor
-    #     y.left = x
-    #     y.right = subtreeC
-
-    #     x.predecessor = y
-    #     x.left = subtreeA
-    #     x.right = subtreeB
-    #     x.height -= 2
+        x.parent = y
+        x.left = subtreeB
+        x.right = subtreeC
+        x.height -= 2
         
-    #     if(subtreeA is not None):
-    #         subtreeA.predecessor = x
-    #     if(subtreeB is not None):
-    #         subtreeB.predecessor = x
-    #     if(subtreeC is not None):
-    #         subtreeC.predecessor = y
+        if(subtreeA is not None):
+            subtreeA.parent = y
+        if(subtreeB is not None):
+            subtreeB.parent = x
+        if(subtreeC is not None):
+            subtreeC.parent = x
+
+        if(x==self.root):
+            self.root = y
+            
+        return y
+
+    def LeftRotate(self, currentNode):
+        """ Performs a left rotation
+            input is x
+
+            st = subtree
+             p---                            p---
+             |                               |
+             x                               y
+          /     \                         /     \ 
+         /       \                       /       \
+        st        y       ====>         x        st
+        A       /   \                 /   \      C
+               /     \               /     \
+              st     st             st     st
+              B       C             A       B
+
+        
+        The annoying part is handling the Nones
+
+        """
+        
+        
+        x        = currentNode
+        y        = currentNode.right
+        subtreeA = currentNode.left
+
+        if(y is not None):
+            subtreeB = y.left
+            subtreeC = y.right
+
+        # Start swapping
+        if(currentNode.parent is not None):
+            if(currentNode.parent.left == currentNode):
+                currentNode.parent.left = y 
+            else:
+                currentNode.parent.right = y
+
+        y.parent = x.parent
+        y.left = x
+        y.right = subtreeC
+
+        x.parent = y
+        x.left = subtreeA
+        x.right = subtreeB
+        x.height -= 2
+        
+        if(subtreeA is not None):
+            subtreeA.parent = x
+        if(subtreeB is not None):
+            subtreeB.parent = x
+        if(subtreeC is not None):
+            subtreeC.parent = y
+
+        if(x==self.root):
+            self.root = y
+            
+        return y
 
         
 

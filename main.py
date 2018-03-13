@@ -21,16 +21,16 @@ def main():
     mainTree.Insert(100)
 
     showMeTheTree(mainTree, 'origTree')
-    time.sleep(2)
+
     
     print("The height of the root node is {}".format(mainTree.root.height))
     print("The subtree size of the root node is {}".format(mainTree.root.subtreeSize))
     print("The smallest key in the tree is {}".format(mainTree.GetMin().key))
     print("The biggest key in the tree is {}".format(mainTree.GetMax().key))
-    print("The successor of {} is {}".format(node17.key, node17.GetSuccessor().key))
+    print("The successor of {} is {}".format(node17.key, node17.GetSuccessor().key if node17.GetSuccessor() is not None else "NA"))
     print("The predecessor of {} is {}".format(node17.key, node17.GetPredecessor().key))
 
-    print("The successor of {} is {}".format(leftMost.key, leftMost.GetSuccessor().key))
+    print("The successor of {} is {}".format(leftMost.key, leftMost.GetSuccessor().key if leftMost.GetSuccessor() is not None else "NA"))
     print("The predecessor of {} is {}".format(leftMost.key, leftMost.GetPredecessor().key if leftMost.GetPredecessor() is not None else "NA" ))
 
     mainTree.InOrderRecursion()
