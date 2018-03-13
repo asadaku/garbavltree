@@ -249,12 +249,13 @@ class node:
         if(tempChild is not None):
             tempChild.parent = self.parent
 
-        if self.parent.left is self :
-            self.parent.left = tempChild
-        else:
-            self.parent.right = tempChild
+        if(self.parent is not None):
+            if self.parent.left is self :
+                self.parent.left = tempChild
+            else:
+                self.parent.right = tempChild
 
-        self.parent.height = 0
+            self.parent.height = 0
 
     def GetNumElementsLessThanKey(self, key):
         numElements = 0
@@ -345,14 +346,12 @@ class avltree:
 
     def UpdateHeights(self, currentNode):
 
-        if currentNode.left is None and currentNode.right is None:
-            currentNode = currentNode.parent
-
+        
         leftHeight, rightHeight = currentNode.GetLeftRightHeight()
 
         if currentNode.height <= max(leftHeight, rightHeight) :
             currentNode.height += 1
-            if currentNode == self.root:
+            if currentNode == self.root or currentNode == None:
                 # We have reached the root node. We are done.
                 return
             else:
@@ -363,14 +362,12 @@ class avltree:
 
     def UpdateSubtreeSize(self, currentNode):
 
-        if currentNode.left is None and currentNode.right is None:
-            currentNode = currentNode.parent
-
         leftSize, rightSize = currentNode.GetLeftRightSubtreeSize()
 
         currentNode.subtreeSize = 1+leftSize+rightSize
-        
-        if currentNode == self.root:
+
+        currentNode = currentNode.parent
+        if currentNode == self.root or currentNode is None:
             # We just updated the root node. We are done.
             return
         else:
@@ -388,7 +385,7 @@ class avltree:
     def DeleteKey(self,key):
         # Finds the key if it exists in the tree. Then deletes it.
         node = self.root.FindKey(key)
-
+        
         if node is not None:
             if node.right is not None:
                 maxNode = node.right.GetMin()
@@ -407,10 +404,11 @@ class avltree:
                 tempNode = node.parent
                 node.NukeNode()
 
-            tempNode.subtreeSize -=1
-            self.UpdateSubtreeSize(tempNode)
-            self.UpdateHeights(tempNode)            
-            self.BalanceTree(tempNode)                
+            if(tempNode is not None):    
+                tempNode.subtreeSize -=1
+                self.UpdateSubtreeSize(tempNode)
+                self.UpdateHeights(tempNode)            
+                self.BalanceTree(tempNode)                
 
             
         else:
