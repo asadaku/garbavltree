@@ -19,7 +19,14 @@ def main():
     node17 = mainTree.Insert(17)
     node35 = mainTree.Insert(35)
     mainTree.Insert(100)
-
+    mainTree.Insert(10100)
+    mainTree.Insert(11000)
+    mainTree.Insert(1010)
+    mainTree.Insert(1001)
+    mainTree.Insert(1010)
+    mainTree.Insert(1100)
+    mainTree.DeleteKey(1100)
+    
     showMeTheTree(mainTree, 'origTree')
 
     
@@ -49,24 +56,26 @@ def main():
     showMeTheTree(mainTree, 'deletedNode')
 
 
-def showMeTheTree(mainTree, filename):
-    locations = mainTree.ReturnTreeAsList([])
-    dot = Digraph(comment='My Tree')
-    
-    for elem in locations:
-        dot.node('key'+str(elem[0]), str(elem[0]))
 
-    spuriousNodeCount=1    
+    
+def showMeTheTree(self, filename):
+    # Plots nodes. Inside, shows the key value, height, and subtree size
+    locations = self.ReturnTreeAsList([])
+    dot = Digraph(comment='My Tree')
+
+
+    for elem in locations:
+        dot.node('key'+str(elem[0][0]), str(elem[0][0])+','+str(elem[0][1])+','+str(elem[0][2]))
+
+    spuriousNodeCount=1
+
     for elem in locations:
         if elem[2] is not None:
-            dot.edge('key'+str(elem[0]), 'key'+str(elem[2]))
+            dot.edge('key'+str(elem[0][0]), 'key'+str(elem[2]))
         if elem[3] is not None:
-            dot.edge('key'+str(elem[0]), 'key'+str(elem[3]))
-
-
+            dot.edge('key'+str(elem[0][0]), 'key'+str(elem[3]))
 
     dot.render(filename)
-    
 
         
 if __name__ == "__main__":
